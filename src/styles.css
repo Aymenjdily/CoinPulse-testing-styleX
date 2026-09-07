@@ -1,0 +1,23 @@
+/* Minimal global reset. Component styling lives in StyleX (see AGENTS.md section 12) —
+   this file stays limited to things StyleX can't express: box-sizing, the tabular-nums
+   font import, and an emit target for the StyleX unplugin's aggregated CSS. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
