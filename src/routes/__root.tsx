@@ -31,18 +31,28 @@ const THEME_INIT_SCRIPT = `(function(){try{var stored=localStorage.getItem(${JSO
   DARK_CLASS,
 )}:${JSON.stringify(LIGHT_CLASS)};root.style.colorScheme=mode;}catch(e){}})();`
 
+const SITE_TITLE = 'CoinPulse — Crypto Market Tracker'
+const SITE_DESCRIPTION =
+  'CoinPulse is a live crypto market dashboard: top coins, price charts, and a personal watchlist — no account required.'
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { name: 'color-scheme', content: 'light' },
-      { title: 'CoinPulse — Crypto Market Tracker' },
-      {
-        name: 'description',
-        content:
-          'CoinPulse is a live crypto market dashboard: top coins, price charts, and a personal watchlist — no account required.',
-      },
+      { title: SITE_TITLE },
+      { name: 'description', content: SITE_DESCRIPTION },
+      { name: 'theme-color', content: '#2563EB' },
+      // Open Graph / Twitter card — no og:image since the app has no
+      // deployed domain to host one at yet; add one once it does rather
+      // than reference a URL that resolves to nothing.
+      { property: 'og:title', content: SITE_TITLE },
+      { property: 'og:description', content: SITE_DESCRIPTION },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary' },
+      { name: 'twitter:title', content: SITE_TITLE },
+      { name: 'twitter:description', content: SITE_DESCRIPTION },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
@@ -51,6 +61,9 @@ export const Route = createRootRoute({
       // through this virtual module instead — without it, StyleX classes
       // are present in the markup but resolve to nothing.
       ...(import.meta.env.DEV ? [{ rel: 'stylesheet', href: '/virtual:stylex.css' }] : []),
+      { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+      { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
     ],
   }),
   shellComponent: RootDocument,
