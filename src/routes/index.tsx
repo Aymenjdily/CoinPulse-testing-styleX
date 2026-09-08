@@ -183,11 +183,13 @@ function App() {
           label="24h volume"
           value={global ? formatCompactUsd(global.totalVolumeUsd) : '—'}
           delta={volumeDelta}
+          note={global && !volumeDelta ? 'awaiting next update' : undefined}
         />
         <StatCard
           label="BTC dominance"
           value={global ? `${global.btcDominance.toFixed(1)}%` : '—'}
           delta={dominanceDelta}
+          note={global && !dominanceDelta ? 'awaiting next update' : undefined}
         />
         <StatCard
           label="Active coins"
