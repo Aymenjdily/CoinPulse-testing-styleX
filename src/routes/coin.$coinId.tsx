@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import * as stylex from '@stylexjs/stylex'
 import { ArrowLeft, Star } from 'lucide-react'
@@ -8,7 +8,7 @@ import { getMarketChart } from '../lib/server/marketChart'
 import { CACHE_TTL_MS } from '../lib/data-policy'
 import { formatCompactNumber, formatCompactUsd, formatPercent, formatPrice } from '../lib/format'
 import { useWatchlist } from '../hooks/useWatchlist'
-import { colors, font, radius, space, type } from '../styles/tokens.stylex'
+import { colors, duration, font, radius, space, type } from '../styles/tokens.stylex'
 import Badge from '../components/Badge'
 import RangeTabs from '../components/RangeTabs'
 import PriceChart from '../components/PriceChart'
@@ -111,6 +111,10 @@ function CoinDetailPage() {
     queryFn: () => getMarketChart({ data: { coinId, days } }),
     refetchInterval: chartTtl,
     refetchIntervalInBackground: false,
+    // Keeps the previous range's chart on screen (dimmed via PriceChart's
+    // isFetching prop) while a newly selected range loads, instead of
+    // blanking to a loading state on every tab click.
+    placeholderData: keepPreviousData,
   })
 
   const coin = detailQuery.data?.data
@@ -179,9 +183,13 @@ function CoinDetailPage() {
           </div>
 
           {chartQuery.data ? (
-            <PriceChart points={chartQuery.data.data.prices} days={days} />
+            <PriceChart
+              points={chartQuery.data.data.prices}
+              days={days}
+              isFetching={chartQuery.isFetching}
+            />
           ) : (
-            <div {...stylex.props(styles.chartLoading)}>Loading chart…</div>
+            <div {...stylex.props(styles.chartLoading)} />
           )}
 
           <div {...stylex.props(styles.statsHeader)}>
@@ -255,6 +263,12 @@ function CoinDetailPage() {
     </main>
   )
 }
+
+const chartShimmer = stylex.keyframes({
+  '0%': { opacity: 0.6 },
+  '50%': { opacity: 1 },
+  '100%': { opacity: 0.6 },
+})
 
 const styles = stylex.create({
   main: {
@@ -398,18 +412,18 @@ const styles = stylex.create({
     opacity: 0.5,
   },
   chartLoading: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     height: 420,
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: colors.border,
     borderRadius: radius.lg,
-    color: colors.foreground,
-    opacity: 0.5,
-    fontFamily: font.sans,
-    fontSize: type.smallSize,
+    backgroundColor: colors.surfaceSubtle,
+    animationName: {
+      default: chartShimmer,
+      '@media (prefers-reduced-motion: reduce)': 'none',
+    },
+    animationDuration: duration.slow,
+    animationIterationCount: 'infinite',
   },
   statsHeader: {
     display: 'flex',

@@ -10,12 +10,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { colors, font, radius, space, type } from '../styles/tokens.stylex'
+import { colors, duration, font, radius, space, type } from '../styles/tokens.stylex'
 import { formatPrice } from '../lib/format'
 
 type PriceChartProps = {
   points: [number, number][]
   days: 1 | 7 | 30 | 365
+  isFetching?: boolean
 }
 
 const dateFormatters: Record<PriceChartProps['days'], Intl.DateTimeFormat> = {
@@ -33,23 +34,36 @@ const tooltipTimeFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 })
 
+// JetBrains Mono at 12px renders each character at a near-fixed advance
+// width — measured empirically rather than guessed, so the price bubble
+// never over/under-shoots the text it contains.
+const MONO_CHAR_WIDTH_12PX = 7.25
+const BUBBLE_PADDING_PX = 20
+const TICK_FONT_SIZE = 12
+
 type ChartTooltipProps = {
   active?: boolean
   payload?: readonly unknown[]
   days: PriceChartProps['days']
+  startPrice: number
 }
 
-function ChartTooltip({ active, payload, days }: ChartTooltipProps) {
+function ChartTooltip({ active, payload, days, startPrice }: ChartTooltipProps) {
   if (!active || !payload?.length) return null
   const point = payload[0] as { payload: { timestamp: number }; value: number }
   const timestamp = point.payload.timestamp
   const price = point.value
+  const changeFromStart = ((price - startPrice) / startPrice) * 100
 
   return (
     <div {...stylex.props(styles.tooltip)}>
       <p {...stylex.props(styles.tooltipPrice)}>{formatPrice(price)}</p>
       <p {...stylex.props(styles.tooltipTime)}>
         {days === 1 ? tooltipTimeFormatter.format(timestamp) : dateFormatters[days].format(timestamp)}
+      </p>
+      <p {...stylex.props(changeFromStart >= 0 ? styles.tooltipChangeUp : styles.tooltipChangeDown)}>
+        {changeFromStart >= 0 ? '+' : ''}
+        {changeFromStart.toFixed(2)}% from range start
       </p>
     </div>
   )
@@ -58,26 +72,27 @@ function ChartTooltip({ active, payload, days }: ChartTooltipProps) {
 function EndBubble({ cx, cy, price }: { cx?: number; cy?: number; price: number }) {
   if (cx === undefined || cy === undefined) return null
   const text = formatPrice(price)
-  const width = text.length * 8 + 20
+  const width = text.length * MONO_CHAR_WIDTH_12PX + BUBBLE_PADDING_PX
 
   return (
     <g>
-      <rect
-        x={cx - 4}
-        y={cy - 12}
-        width={width}
-        height={24}
-        rx={12}
-        fill={colors.primary}
-      />
-      <text x={cx + width / 2 - 4} y={cy + 4} textAnchor="middle" fontSize={12} fontWeight={700} fill="#FFFFFF">
+      <rect x={cx - 6} y={cy - 13} width={width} height={26} rx={13} fill={colors.primary} />
+      <text
+        x={cx - 6 + width / 2}
+        y={cy + 4}
+        textAnchor="middle"
+        fontSize={TICK_FONT_SIZE}
+        fontWeight={700}
+        fontFamily="JetBrains Mono, ui-monospace, monospace"
+        fill="#FFFFFF"
+      >
         {text}
       </text>
     </g>
   )
 }
 
-export default function PriceChart({ points, days }: PriceChartProps) {
+export default function PriceChart({ points, days, isFetching = false }: PriceChartProps) {
   if (points.length < 2) {
     return <div {...stylex.props(styles.empty)}>Not enough data to chart this range yet.</div>
   }
@@ -87,61 +102,73 @@ export default function PriceChart({ points, days }: PriceChartProps) {
   const maxPrice = Math.max(...prices)
   const minPrice = Math.min(...prices)
   const lastPoint = data[data.length - 1]
+  const startPrice = data[0].price
+
+  // Asymmetric headroom: flush at the bottom, breathing room at the top so
+  // the max-value guide line and the end-price bubble don't collide with
+  // the plot's top edge.
+  const priceRange = maxPrice - minPrice || maxPrice * 0.01
+  const yDomain: [number, number] = [minPrice - priceRange * 0.02, maxPrice + priceRange * 0.12]
 
   return (
     <div {...stylex.props(styles.wrap)}>
-      <ResponsiveContainer width="100%" height={420}>
-        <AreaChart data={data} margin={{ top: 24, right: 60, left: 8, bottom: 8 }}>
-          <defs>
-            <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={colors.chartLine} stopOpacity={0.2} />
-              <stop offset="100%" stopColor={colors.chartLine} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke={colors.chartGrid} vertical={false} />
-          <XAxis
-            dataKey="timestamp"
-            type="number"
-            domain={['dataMin', 'dataMax']}
-            tickFormatter={(value: number) => dateFormatters[days].format(value)}
-            stroke={colors.border}
-            tick={{ fill: colors.foreground, fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}
-            tickLine={false}
-            axisLine={{ stroke: colors.border }}
-            minTickGap={48}
-          />
-          <YAxis
-            domain={[minPrice, maxPrice]}
-            tickFormatter={(value: number) => formatPrice(value)}
-            stroke={colors.border}
-            tick={{ fill: colors.foreground, fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}
-            tickLine={false}
-            axisLine={false}
-            width={90}
-          />
-          <Tooltip
-            content={(props) => <ChartTooltip {...props} days={days} />}
-            cursor={{ stroke: colors.border, strokeDasharray: '4 4' }}
-          />
-          <ReferenceLine y={maxPrice} stroke={colors.primary} strokeDasharray="4 4" strokeOpacity={0.5} />
-          <Area
-            type="monotone"
-            dataKey="price"
-            stroke={colors.chartLine}
-            strokeWidth={2}
-            fill="url(#priceFill)"
-            isAnimationActive={false}
-          />
-          <ReferenceDot
-            x={lastPoint.timestamp}
-            y={lastPoint.price}
-            r={0}
-            shape={(props: { cx?: number; cy?: number }) => (
-              <EndBubble cx={props.cx} cy={props.cy} price={lastPoint.price} />
-            )}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <div {...stylex.props(styles.chartArea, isFetching && styles.chartAreaFetching)}>
+        <ResponsiveContainer width="100%" height={420}>
+          <AreaChart data={data} margin={{ top: 24, right: 64, left: 8, bottom: 8 }} accessibilityLayer>
+            <defs>
+              <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={colors.chartLine} stopOpacity={0.2} />
+                <stop offset="100%" stopColor={colors.chartLine} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke={colors.chartGrid} vertical={false} />
+            <XAxis
+              dataKey="timestamp"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(value: number) => dateFormatters[days].format(value)}
+              stroke={colors.border}
+              tick={{ fill: colors.foreground, fontSize: TICK_FONT_SIZE, fontFamily: font.mono }}
+              tickLine={false}
+              axisLine={{ stroke: colors.border }}
+              minTickGap={48}
+            />
+            <YAxis
+              domain={yDomain}
+              tickFormatter={(value: number) => formatPrice(value)}
+              stroke={colors.border}
+              tick={{ fill: colors.foreground, fontSize: TICK_FONT_SIZE, fontFamily: font.mono }}
+              tickLine={false}
+              axisLine={false}
+              width={90}
+            />
+            <Tooltip
+              content={(props) => <ChartTooltip {...props} days={days} startPrice={startPrice} />}
+              cursor={{ stroke: colors.border, strokeDasharray: '4 4' }}
+              isAnimationActive={false}
+            />
+            <ReferenceLine y={maxPrice} stroke={colors.primary} strokeDasharray="4 4" strokeOpacity={0.5} />
+            <Area
+              type="monotone"
+              dataKey="price"
+              stroke={colors.chartLine}
+              strokeWidth={2}
+              fill="url(#priceFill)"
+              isAnimationActive={false}
+              dot={false}
+              activeDot={{ r: 5, fill: colors.primary, stroke: colors.background, strokeWidth: 2 }}
+            />
+            <ReferenceDot
+              x={lastPoint.timestamp}
+              y={lastPoint.price}
+              r={0}
+              shape={(props: { cx?: number; cy?: number }) => (
+                <EndBubble cx={props.cx} cy={props.cy} price={lastPoint.price} />
+              )}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }
@@ -149,6 +176,13 @@ export default function PriceChart({ points, days }: PriceChartProps) {
 const styles = stylex.create({
   wrap: {
     width: '100%',
+  },
+  chartArea: {
+    transitionProperty: 'opacity',
+    transitionDuration: duration.base,
+  },
+  chartAreaFetching: {
+    opacity: 0.5,
   },
   empty: {
     display: 'flex',
@@ -161,6 +195,9 @@ const styles = stylex.create({
     opacity: 0.5,
   },
   tooltip: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
     backgroundColor: colors.background,
     borderWidth: 1,
     borderStyle: 'solid',
@@ -182,5 +219,17 @@ const styles = stylex.create({
     fontSize: type.captionSize,
     color: colors.foreground,
     opacity: 0.5,
+  },
+  tooltipChangeUp: {
+    margin: 0,
+    fontFamily: font.mono,
+    fontSize: type.captionSize,
+    color: colors.up,
+  },
+  tooltipChangeDown: {
+    margin: 0,
+    fontFamily: font.mono,
+    fontSize: type.captionSize,
+    color: colors.down,
   },
 })
