@@ -2,11 +2,12 @@ import { Link, useSearch } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import * as stylex from '@stylexjs/stylex'
+import { Star } from 'lucide-react'
 import { searchCoins } from '../lib/server/search'
 import type { SearchResult } from '../lib/types'
 import { SEARCH_DEBOUNCE_MS } from '../lib/data-policy'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { colors, font, space, type } from '../styles/tokens.stylex'
+import { colors, font, radius, space, type } from '../styles/tokens.stylex'
 import SearchInput from './SearchInput'
 import SearchResults from './SearchResults'
 import Badge from './Badge'
@@ -61,6 +62,7 @@ export default function Header() {
     <header {...stylex.props(styles.header)}>
       <nav {...stylex.props(styles.nav)}>
         <Link to="/" {...stylex.props(styles.brand)}>
+          <span {...stylex.props(styles.brandDot)} />
           CoinPulse
         </Link>
 
@@ -77,7 +79,7 @@ export default function Header() {
             search={{ view: 'watchlist' }}
             {...stylex.props(styles.navLink, activeView === 'watchlist' && styles.navLinkActive)}
           >
-            Watchlist
+            <Star size={14} strokeWidth={2} aria-hidden="true" /> Watchlist
           </Link>
         </div>
 
@@ -105,7 +107,9 @@ export default function Header() {
           )}
         </div>
 
-        <Badge variant="live">Live</Badge>
+        <div {...stylex.props(styles.rightGroup)}>
+          <Badge variant="live">Live</Badge>
+        </div>
       </nav>
     </header>
   )
@@ -123,6 +127,7 @@ const styles = stylex.create({
   },
   nav: {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: space.lg,
     maxWidth: 1280,
@@ -131,6 +136,9 @@ const styles = stylex.create({
     paddingInline: space.lg,
   },
   brand: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: space.xs,
     fontFamily: font.mono,
     fontWeight: 700,
     fontSize: type.bodySize,
@@ -139,6 +147,12 @@ const styles = stylex.create({
     textDecoration: 'none',
     flexShrink: 0,
   },
+  brandDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
   navLinks: {
     display: 'flex',
     alignItems: 'center',
@@ -146,6 +160,9 @@ const styles = stylex.create({
     flexShrink: 0,
   },
   navLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: space.xs,
     fontFamily: font.sans,
     fontSize: type.smallSize,
     fontWeight: 600,
@@ -164,7 +181,14 @@ const styles = stylex.create({
   },
   searchWrap: {
     position: 'relative',
-    flexGrow: 1,
-    maxWidth: 360,
+    width: 420,
+    maxWidth: '100%',
+  },
+  rightGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: space.sm,
+    marginLeft: 'auto',
+    flexShrink: 0,
   },
 })
