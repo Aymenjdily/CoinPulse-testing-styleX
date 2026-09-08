@@ -27,7 +27,7 @@ commit and `prompts/001-project-init.md` for what it covered.
 | 02 | [Data layer & CoinGecko server functions](02-data-layer.md) | Done |
 | 03 | [Global stats strip](03-global-stats-strip.md) | Done |
 | 04 | [Markets table](04-markets-table.md) | Done |
-| 05 | [Coin detail page](05-coin-detail.md) | Not started |
+| 05 | [Coin detail page](05-coin-detail.md) | Done |
 | 06 | [Watchlist](06-watchlist.md) | Done |
 | 07 | [Search](07-search.md) | Done |
 | 08 | [Trending rail](08-trending-rail.md) | Done |

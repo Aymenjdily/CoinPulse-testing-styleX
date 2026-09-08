@@ -92,8 +92,12 @@ export const font = stylex.defineVars({
   mono: '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace',
 })
 
-// Inter type ramp: size/weight pairs from design-system.png section 02
+// Inter type ramp: size/weight pairs from design-system.png section 02, plus
+// heroSize added for the coin-detail page's price display (page-details.png
+// — bigger than any size the original design system defined).
 export const type = stylex.defineVars({
+  heroSize: '48px',
+  heroWeight: '700',
   displaySize: '30px',
   displayWeight: '700',
   titleSize: '24px',

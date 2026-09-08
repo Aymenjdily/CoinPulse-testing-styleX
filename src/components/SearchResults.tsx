@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex'
+import { Link } from '@tanstack/react-router'
 import type { SearchResult } from '../lib/types'
 import { colors, elevation, font, radius, space, type } from '../styles/tokens.stylex'
 
@@ -10,9 +11,6 @@ type SearchResultsProps = {
   onSelect: (result: SearchResult) => void
 }
 
-// Coin detail pages don't exist yet (tasks/05-coin-detail.md) — selecting a
-// result just closes the dropdown for now rather than linking somewhere
-// fake.
 export default function SearchResults({
   results,
   query,
@@ -30,9 +28,10 @@ export default function SearchResults({
       )}
       {!isLoading &&
         results.map((result, index) => (
-          <button
+          <Link
             key={result.id}
-            type="button"
+            to="/coin/$coinId"
+            params={{ coinId: result.id }}
             role="option"
             aria-selected={index === highlightedIndex}
             onClick={() => onSelect(result)}
@@ -41,7 +40,7 @@ export default function SearchResults({
             <img src={result.thumb} alt="" width={20} height={20} {...stylex.props(styles.thumb)} />
             <span {...stylex.props(styles.name)}>{result.name}</span>
             <span {...stylex.props(styles.symbol)}>{result.symbol.toUpperCase()}</span>
-          </button>
+          </Link>
         ))}
     </div>
   )

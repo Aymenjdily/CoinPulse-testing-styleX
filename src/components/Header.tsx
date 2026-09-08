@@ -1,4 +1,4 @@
-import { Link, useSearch } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import * as stylex from '@stylexjs/stylex'
@@ -15,6 +15,7 @@ import Badge from './Badge'
 
 export default function Header() {
   const { mode, toggle } = useTheme()
+  const navigate = useNavigate()
   const search = useSearch({ strict: false }) as { view?: string }
   const activeView = search.view === 'watchlist' ? 'watchlist' : 'all'
 
@@ -42,6 +43,11 @@ export default function Header() {
     inputRef.current?.blur()
   }
 
+  function handleKeyboardSelect(result: SearchResult) {
+    handleSelect(result)
+    navigate({ to: '/coin/$coinId', params: { coinId: result.id } })
+  }
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (!isOpen || results.length === 0) return
 
@@ -53,7 +59,7 @@ export default function Header() {
       setHighlightedIndex((index) => (index - 1 + results.length) % results.length)
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      handleSelect(results[highlightedIndex])
+      handleKeyboardSelect(results[highlightedIndex])
     } else if (event.key === 'Escape') {
       closeDropdown()
       inputRef.current?.blur()

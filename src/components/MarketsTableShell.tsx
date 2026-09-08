@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex'
+import { Link } from '@tanstack/react-router'
 import { ArrowUp, ArrowDown, Star } from 'lucide-react'
 import type { CoinMarket } from '../lib/types'
 import type { FlashDirection } from '../hooks/usePriceFlash'
@@ -132,13 +133,13 @@ export function MarketsTableRow({ coin, isWatched, onToggleWatch, flash }: RowPr
         <Star size={16} strokeWidth={2} fill={isWatched ? 'currentColor' : 'none'} {...stylex.props(styles.starIcon, isWatched && styles.starIconActive)} />
       </button>
       <span {...stylex.props(styles.rankCell)}>{coin.marketCapRank ?? '—'}</span>
-      <span {...stylex.props(styles.coinCell)}>
+      <Link to="/coin/$coinId" params={{ coinId: coin.id }} {...stylex.props(styles.coinCell)}>
         <img src={coin.image} alt="" width={24} height={24} {...stylex.props(styles.coinIcon)} />
         <span>
           <span {...stylex.props(styles.coinName)}>{coin.name}</span>
           <span {...stylex.props(styles.coinSymbol)}>{coin.symbol.toUpperCase()}</span>
         </span>
-      </span>
+      </Link>
       <span
         aria-live="off"
         {...stylex.props(
