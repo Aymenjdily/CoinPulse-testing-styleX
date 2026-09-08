@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import * as stylex from '@stylexjs/stylex'
 import {
   Area,
@@ -34,10 +35,10 @@ const tooltipTimeFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 })
 
-// JetBrains Mono at 12px renders each character at a near-fixed advance
-// width — measured empirically rather than guessed, so the price bubble
-// never over/under-shoots the text it contains.
-const MONO_CHAR_WIDTH_12PX = 7.25
+// Guessing a per-character advance width was unreliable (bold weight, font
+// fallback if the mono font isn't loaded yet, "$"/","/"." glyph widths) and
+// visibly clipped text in practice. BUBBLE_PADDING_PX is only a fallback
+// used for the very first paint before the real text has been measured.
 const BUBBLE_PADDING_PX = 20
 const TICK_FONT_SIZE = 12
 
@@ -70,15 +71,31 @@ function ChartTooltip({ active, payload, days, startPrice }: ChartTooltipProps) 
 }
 
 function EndBubble({ cx, cy, price }: { cx?: number; cy?: number; price: number }) {
-  if (cx === undefined || cy === undefined) return null
+  const textRef = useRef<SVGTextElement>(null)
+  const [textWidth, setTextWidth] = useState<number | null>(null)
   const text = formatPrice(price)
-  const width = text.length * MONO_CHAR_WIDTH_12PX + BUBBLE_PADDING_PX
+
+  // getBBox() measures the glyphs actually rendered by the browser — the
+  // only reliable way to size the pill, since a guessed character width
+  // clipped real prices (bold weight + font-fallback widths don't match a
+  // flat per-character estimate).
+  useLayoutEffect(() => {
+    if (textRef.current) {
+      setTextWidth(textRef.current.getBBox().width)
+    }
+  }, [text])
+
+  if (cx === undefined || cy === undefined) return null
+
+  const width = textWidth !== null ? textWidth + BUBBLE_PADDING_PX : text.length * 9 + BUBBLE_PADDING_PX
+  const centerX = cx - 6 + width / 2
 
   return (
     <g>
       <rect x={cx - 6} y={cy - 13} width={width} height={26} rx={13} fill={colors.primary} />
       <text
-        x={cx - 6 + width / 2}
+        ref={textRef}
+        x={centerX}
         y={cy + 4}
         textAnchor="middle"
         fontSize={TICK_FONT_SIZE}
