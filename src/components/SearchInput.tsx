@@ -46,6 +46,15 @@ const styles = stylex.create({
     paddingBlock: space.sm,
     paddingInline: space.md,
     minWidth: '280px',
+    // The input's own outline is suppressed below (a rectangular native
+    // outline would look wrong clipped by this pill's rounded corners), so
+    // the focus indicator moves here instead — :focus-within still fires
+    // whenever the input inside has focus. Never remove one without the
+    // other: a keyboard user must always see something on focus.
+    boxShadow: {
+      default: 'none',
+      ':focus-within': `0 0 0 2px ${colors.primary}`,
+    },
   },
   icon: {
     display: 'inline-flex',

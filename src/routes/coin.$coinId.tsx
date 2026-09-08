@@ -8,7 +8,8 @@ import { getMarketChart } from '../lib/server/marketChart'
 import { CACHE_TTL_MS } from '../lib/data-policy'
 import { formatCompactNumber, formatCompactUsd, formatPercent, formatPrice } from '../lib/format'
 import { useWatchlist } from '../hooks/useWatchlist'
-import { colors, duration, font, radius, space, type } from '../styles/tokens.stylex'
+import { colors, font, radius, space, type } from '../styles/tokens.stylex'
+import { skeleton } from '../styles/skeleton.stylex'
 import Badge from '../components/Badge'
 import RangeTabs from '../components/RangeTabs'
 import PriceChart from '../components/PriceChart'
@@ -125,7 +126,7 @@ function CoinDetailPage() {
         <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" /> Back to markets
       </Link>
 
-      {!coin && <p {...stylex.props(styles.loading)}>Loading…</p>}
+      {!coin && <CoinDetailSkeleton />}
 
       {coin && (
         <>
@@ -189,7 +190,7 @@ function CoinDetailPage() {
               isFetching={chartQuery.isFetching}
             />
           ) : (
-            <div {...stylex.props(styles.chartLoading)} />
+            <div {...stylex.props(skeleton.pulse, styles.chartLoading)} />
           )}
 
           <div {...stylex.props(styles.statsHeader)}>
@@ -264,11 +265,30 @@ function CoinDetailPage() {
   )
 }
 
-const chartShimmer = stylex.keyframes({
-  '0%': { opacity: 0.6 },
-  '50%': { opacity: 1 },
-  '100%': { opacity: 0.6 },
-})
+function CoinDetailSkeleton() {
+  return (
+    <div {...stylex.props(styles.skeletonWrap)}>
+      <div {...stylex.props(styles.identityRow)}>
+        <div {...stylex.props(styles.identity)}>
+          <span {...stylex.props(skeleton.pulse, styles.skeletonCircle)} />
+          <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonName)} />
+        </div>
+      </div>
+      <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonPrice)} />
+      <div {...stylex.props(styles.periodsRow)}>
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonPeriod)} />
+        ))}
+      </div>
+      <div {...stylex.props(skeleton.pulse, styles.chartLoading)} />
+      <div {...stylex.props(styles.statsGrid)}>
+        {Array.from({ length: 8 }, (_, i) => (
+          <span key={i} {...stylex.props(skeleton.pulse, styles.skeletonStatCard)} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const styles = stylex.create({
   main: {
@@ -290,12 +310,6 @@ const styles = stylex.create({
     opacity: 0.6,
     textDecoration: 'none',
     width: 'fit-content',
-  },
-  loading: {
-    fontFamily: font.sans,
-    fontSize: type.bodySize,
-    color: colors.foreground,
-    opacity: 0.5,
   },
   identityRow: {
     display: 'flex',
@@ -418,12 +432,31 @@ const styles = stylex.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     backgroundColor: colors.surfaceSubtle,
-    animationName: {
-      default: chartShimmer,
-      '@media (prefers-reduced-motion: reduce)': 'none',
-    },
-    animationDuration: duration.slow,
-    animationIterationCount: 'infinite',
+  },
+  skeletonWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: space.lg,
+  },
+  skeletonBlock: {
+    display: 'inline-block',
+    backgroundColor: colors.surfaceSubtle,
+    borderRadius: radius.sm,
+  },
+  skeletonCircle: {
+    display: 'inline-block',
+    width: '40px',
+    height: '40px',
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceSubtle,
+    flexShrink: 0,
+  },
+  skeletonName: { width: '160px', height: '24px' },
+  skeletonPrice: { width: '220px', height: '48px' },
+  skeletonPeriod: { width: '80px', height: '18px' },
+  skeletonStatCard: {
+    height: '96px',
+    borderRadius: radius.lg,
   },
   statsHeader: {
     display: 'flex',

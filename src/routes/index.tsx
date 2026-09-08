@@ -199,7 +199,11 @@ function App() {
         </div>
       </section>
 
-      {trendingQuery.data && <TrendingRail coins={trendingQuery.data.data} />}
+      {trendingQuery.isLoading ? (
+        <TrendingRail coins={[]} isLoading />
+      ) : (
+        trendingQuery.data && <TrendingRail coins={trendingQuery.data.data} />
+      )}
 
       <section {...stylex.props(styles.marketsSection)}>
         <div {...stylex.props(styles.marketsHeader)}>
@@ -315,7 +319,12 @@ const styles = stylex.create({
     borderStyle: 'solid',
     borderColor: colors.border,
     borderRadius: radius.lg,
-    overflow: 'hidden',
+    // The grid's columns have a real minWidth (MarketsTableShell) that
+    // can't meaningfully compress to phone width — scrolling horizontally
+    // keeps every column legible and reachable instead of clipping content
+    // that overflow: hidden would have hidden with no way to reach it.
+    overflowX: 'auto',
+    overflowY: 'hidden',
   },
   emptyState: {
     display: 'flex',

@@ -4,6 +4,7 @@ import { ArrowUp, ArrowDown, Star } from 'lucide-react'
 import type { CoinMarket } from '../lib/types'
 import type { FlashDirection } from '../hooks/usePriceFlash'
 import { colors, duration, easing, font, radius, space, type } from '../styles/tokens.stylex'
+import { skeleton } from '../styles/skeleton.stylex'
 import { formatCompactUsd, formatPercent, formatPrice } from '../lib/format'
 import Badge from './Badge'
 
@@ -19,6 +20,11 @@ export type SortDir = 'asc' | 'desc'
 
 const gridTemplate =
   '32px 48px minmax(160px, 2fr) repeat(4, minmax(80px, 1fr)) 120px minmax(90px, 1fr)'
+// Below this width the columns squeeze to illegibility rather than reading
+// as a table — the parent scroll container (see index.tsx's tableShell)
+// lets the table scroll horizontally instead of clipping content on narrow
+// viewports.
+const gridMinWidth = '760px'
 
 function ChangeBadge({ value }: { value: number | null }) {
   if (value === null) return <span {...stylex.props(styles.numericCell)}>—</span>
@@ -173,19 +179,19 @@ export function MarketsTableSkeletonRow() {
   return (
     <div {...stylex.props(styles.row)}>
       <span />
-      <span {...stylex.props(styles.skeletonBlock, styles.skeletonRank)} />
+      <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonRank)} />
       <span {...stylex.props(styles.coinCell)}>
-        <span {...stylex.props(styles.skeletonCircle)} />
-        <span {...stylex.props(styles.skeletonBlock, styles.skeletonName)} />
+        <span {...stylex.props(skeleton.pulse, styles.skeletonCircle)} />
+        <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonName)} />
       </span>
-      <span {...stylex.props(styles.skeletonBlock, styles.skeletonNumeric)} />
-      <span {...stylex.props(styles.skeletonBlock, styles.skeletonNumericSmall)} />
-      <span {...stylex.props(styles.skeletonBlock, styles.skeletonNumericSmall)} />
-      <span {...stylex.props(styles.skeletonBlock, styles.skeletonNumericSmall)} />
+      <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonNumeric)} />
+      <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonNumericSmall)} />
+      <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonNumericSmall)} />
+      <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonNumericSmall)} />
       <span {...stylex.props(styles.sparklineCell)}>
-        <span {...stylex.props(styles.skeletonBlock, styles.skeletonSparkline)} />
+        <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonSparkline)} />
       </span>
-      <span {...stylex.props(styles.skeletonBlock, styles.skeletonNumericWide)} />
+      <span {...stylex.props(skeleton.pulse, styles.skeletonBlock, styles.skeletonNumericWide)} />
     </div>
   )
 }
@@ -200,16 +206,11 @@ const flashDownKeyframes = stylex.keyframes({
   '100%': { backgroundColor: 'transparent' },
 })
 
-const shimmer = stylex.keyframes({
-  '0%': { opacity: 0.5 },
-  '50%': { opacity: 1 },
-  '100%': { opacity: 0.5 },
-})
-
 const styles = stylex.create({
   headerRow: {
     display: 'grid',
     gridTemplateColumns: gridTemplate,
+    minWidth: gridMinWidth,
     alignItems: 'center',
     gap: space.md,
     paddingBlock: space.sm,
@@ -266,6 +267,7 @@ const styles = stylex.create({
   row: {
     display: 'grid',
     gridTemplateColumns: gridTemplate,
+    minWidth: gridMinWidth,
     alignItems: 'center',
     gap: space.md,
     paddingBlock: space.md,
@@ -355,12 +357,6 @@ const styles = stylex.create({
     display: 'inline-block',
     backgroundColor: colors.border,
     borderRadius: radius.sm,
-    animationName: {
-      default: shimmer,
-      '@media (prefers-reduced-motion: reduce)': 'none',
-    },
-    animationDuration: duration.slow,
-    animationIterationCount: 'infinite',
   },
   skeletonCircle: {
     display: 'inline-block',
@@ -369,12 +365,6 @@ const styles = stylex.create({
     borderRadius: radius.pill,
     backgroundColor: colors.border,
     flexShrink: 0,
-    animationName: {
-      default: shimmer,
-      '@media (prefers-reduced-motion: reduce)': 'none',
-    },
-    animationDuration: duration.slow,
-    animationIterationCount: 'infinite',
   },
   skeletonRank: { width: '16px', height: '12px' },
   skeletonName: { width: '96px', height: '14px' },

@@ -2,13 +2,31 @@ import * as stylex from '@stylexjs/stylex'
 import { Flame } from 'lucide-react'
 import type { TrendingCoin } from '../lib/types'
 import { colors, font, radius, space, type } from '../styles/tokens.stylex'
+import { skeleton } from '../styles/skeleton.stylex'
 import { formatPercent } from '../lib/format'
 
 type TrendingRailProps = {
   coins: TrendingCoin[]
+  isLoading?: boolean
 }
 
-export default function TrendingRail({ coins }: TrendingRailProps) {
+export default function TrendingRail({ coins, isLoading = false }: TrendingRailProps) {
+  if (isLoading) {
+    return (
+      <section {...stylex.props(styles.section)} aria-label="Trending coins" aria-busy="true">
+        <div {...stylex.props(styles.heading)}>
+          <Flame size={14} strokeWidth={2} color={colors.warn} aria-hidden="true" />
+          <span {...stylex.props(styles.headingText)}>TRENDING</span>
+        </div>
+        <div {...stylex.props(styles.row)}>
+          {Array.from({ length: 7 }, (_, i) => (
+            <span key={i} {...stylex.props(skeleton.pulse, styles.skeletonPill)} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
   if (coins.length === 0) return null
 
   return (
@@ -97,5 +115,12 @@ const styles = stylex.create({
   },
   changeDown: {
     color: colors.down,
+  },
+  skeletonPill: {
+    display: 'inline-block',
+    width: '104px',
+    height: '38px',
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceSubtle,
   },
 })
