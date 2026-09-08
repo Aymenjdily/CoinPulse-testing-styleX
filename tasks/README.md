@@ -24,7 +24,7 @@ commit and `prompts/001-project-init.md` for what it covered.
 | # | Phase | Status |
 |---|-------|--------|
 | 01 | [Design system implementation](01-design-system.md) | Done |
-| 02 | [Data layer & CoinGecko server functions](02-data-layer.md) | Not started |
+| 02 | [Data layer & CoinGecko server functions](02-data-layer.md) | Done |
 | 03 | [Global stats strip](03-global-stats-strip.md) | Not started |
 | 04 | [Markets table](04-markets-table.md) | Not started |
 | 05 | [Coin detail page](05-coin-detail.md) | Not started |
