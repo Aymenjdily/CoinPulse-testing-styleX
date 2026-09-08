@@ -14,8 +14,13 @@ export default function StatCard({ label, value, delta, note }: StatCardProps) {
     <div {...stylex.props(styles.card)}>
       <p {...stylex.props(styles.label)}>{label}</p>
       <p {...stylex.props(styles.value)}>{value}</p>
-      {delta && <Badge variant={delta.direction}>{delta.text}</Badge>}
-      {note && <p {...stylex.props(styles.note)}>{note}</p>}
+      {/* Always reserve this row's height so cards without a delta yet
+          (e.g. waiting on a second poll) don't collapse shorter than
+          their siblings and throw off the row. */}
+      <div {...stylex.props(styles.footer)}>
+        {delta && <Badge variant={delta.direction}>{delta.text}</Badge>}
+        {note && <p {...stylex.props(styles.note)}>{note}</p>}
+      </div>
     </div>
   )
 }
@@ -25,6 +30,7 @@ const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     gap: space.sm,
+    height: '100%',
     backgroundColor: colors.background,
     borderWidth: 1,
     borderStyle: 'solid',
@@ -56,5 +62,11 @@ const styles = stylex.create({
     fontSize: type.smallSize,
     color: colors.foreground,
     opacity: 0.5,
+  },
+  footer: {
+    display: 'flex',
+    alignItems: 'center',
+    minHeight: '26px',
+    marginTop: 'auto',
   },
 })
