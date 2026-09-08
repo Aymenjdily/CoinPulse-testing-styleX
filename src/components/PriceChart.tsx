@@ -1,4 +1,3 @@
-import { useLayoutEffect, useRef, useState } from 'react'
 import * as stylex from '@stylexjs/stylex'
 import {
   Area,
@@ -11,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { colors, duration, font, radius, space, type } from '../styles/tokens.stylex'
+import { colors, duration, elevation, font, radius, space, type } from '../styles/tokens.stylex'
 import { formatPrice } from '../lib/format'
 
 type PriceChartProps = {
@@ -35,12 +34,13 @@ const tooltipTimeFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 })
 
-// Guessing a per-character advance width was unreliable (bold weight, font
-// fallback if the mono font isn't loaded yet, "$"/","/"." glyph widths) and
-// visibly clipped text in practice. BUBBLE_PADDING_PX is only a fallback
-// used for the very first paint before the real text has been measured.
-const BUBBLE_PADDING_PX = 20
 const TICK_FONT_SIZE = 12
+// Generously wide/tall box for the end-price bubble's <foreignObject> — real
+// HTML/CSS sizes the pill to its actual content natively (no measuring, no
+// resize flash), so this only needs to be big enough to never clip the
+// longest realistic price string; it doesn't need to be exact.
+const BUBBLE_BOX_WIDTH = 160
+const BUBBLE_BOX_HEIGHT = 40
 
 type ChartTooltipProps = {
   active?: boolean
@@ -72,49 +72,40 @@ function ChartTooltip({ active, payload, days, startPrice }: ChartTooltipProps) 
 
 // A recognized Recharts component (ReferenceDot, etc.) still paints inside
 // Recharts' own fixed internal layer order regardless of where it sits in
-// JSX — that's what left the bubble rendering *behind* the Area's fill.
-// Recharts 3 renders genuinely custom, non-Recharts components in true JSX
-// order instead, so this reads its own pixel position via useCartesianScale
-// and is placed as the AreaChart's last child to guarantee it paints on top
-// of everything else.
+// JSX — that's what once left this bubble rendering *behind* the Area's
+// fill. Recharts 3 renders genuinely custom, non-Recharts components in
+// true JSX order instead, so this reads its own pixel position via
+// useCartesianScale and is placed as the AreaChart's last child to
+// guarantee it paints on top of everything else.
+//
+// The pill itself is real HTML (via <foreignObject>), reusing the same
+// Badge-style visual language as the rest of the app, and sized by the
+// browser's normal CSS layout — not a hand-measured SVG rect. That's what
+// makes this a real fix rather than another guess: there is no width to
+// get wrong, and no measure-then-resize flash on mount or on every price
+// update, because CSS `width: fit-content` sizes it correctly on the very
+// first frame.
 function EndPriceBubble({ timestamp, price }: { timestamp: number; price: number }) {
-  const textRef = useRef<SVGTextElement>(null)
-  const [textWidth, setTextWidth] = useState<number | null>(null)
-  const text = formatPrice(price)
   const point = useCartesianScale({ x: timestamp, y: price })
-
-  // getBBox() measures the glyphs actually rendered by the browser — the
-  // only reliable way to size the pill, since a guessed character width
-  // clipped real prices (bold weight + font-fallback widths don't match a
-  // flat per-character estimate).
-  useLayoutEffect(() => {
-    if (textRef.current) {
-      setTextWidth(textRef.current.getBBox().width)
-    }
-  }, [text])
-
   if (!point) return null
-  const { x: cx, y: cy } = point
-
-  const width = textWidth !== null ? textWidth + BUBBLE_PADDING_PX : text.length * 9 + BUBBLE_PADDING_PX
-  const centerX = cx - 6 + width / 2
 
   return (
-    <g>
-      <rect x={cx - 6} y={cy - 13} width={width} height={26} rx={13} fill={colors.primary} />
-      <text
-        ref={textRef}
-        x={centerX}
-        y={cy + 4}
-        textAnchor="middle"
-        fontSize={TICK_FONT_SIZE}
-        fontWeight={700}
-        fontFamily="JetBrains Mono, ui-monospace, monospace"
-        fill="#FFFFFF"
+    <foreignObject
+      x={point.x - 8}
+      y={point.y - BUBBLE_BOX_HEIGHT / 2}
+      width={BUBBLE_BOX_WIDTH}
+      height={BUBBLE_BOX_HEIGHT}
+      style={{ overflow: 'visible', pointerEvents: 'none' }}
+    >
+      {/* xmlns is required for React to render this as real HTML (not SVG)
+          inside a foreignObject; TS's DOM types don't know the attribute. */}
+      <div
+        {...({ xmlns: 'http://www.w3.org/1999/xhtml' } as Record<string, string>)}
+        {...stylex.props(styles.bubbleRow)}
       >
-        {text}
-      </text>
-    </g>
+        <span {...stylex.props(styles.bubble)}>{formatPrice(price)}</span>
+      </div>
+    </foreignObject>
   )
 }
 
@@ -250,5 +241,24 @@ const styles = stylex.create({
     fontFamily: font.mono,
     fontSize: type.captionSize,
     color: colors.down,
+  },
+  bubbleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    height: '100%',
+  },
+  bubble: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',
+    fontFamily: font.mono,
+    fontSize: type.smallSize,
+    fontWeight: 700,
+    color: '#FFFFFF',
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingBlock: space.xs,
+    paddingInline: space.md,
+    boxShadow: elevation.shadowMd,
   },
 })
