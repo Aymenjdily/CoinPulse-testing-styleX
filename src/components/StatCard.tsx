@@ -1,0 +1,51 @@
+import * as stylex from '@stylexjs/stylex'
+import { colors, font, radius, space, type } from '../styles/tokens.stylex'
+import Badge from './Badge'
+
+type StatCardProps = {
+  label: string
+  value: string
+  delta?: { direction: 'up' | 'down'; text: string }
+}
+
+export default function StatCard({ label, value, delta }: StatCardProps) {
+  return (
+    <div {...stylex.props(styles.card)}>
+      <p {...stylex.props(styles.label)}>{label}</p>
+      <p {...stylex.props(styles.value)}>{value}</p>
+      {delta && <Badge variant={delta.direction}>{delta.text}</Badge>}
+    </div>
+  )
+}
+
+const styles = stylex.create({
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: space.sm,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: space.lg,
+  },
+  label: {
+    margin: 0,
+    fontFamily: font.sans,
+    fontSize: type.captionSize,
+    fontWeight: type.captionWeight,
+    letterSpacing: type.captionTracking,
+    textTransform: 'uppercase',
+    color: colors.foreground,
+    opacity: 0.5,
+  },
+  value: {
+    margin: 0,
+    fontFamily: font.mono,
+    fontSize: type.titleSize,
+    fontWeight: type.titleWeight,
+    color: colors.foreground,
+    fontVariantNumeric: 'tabular-nums',
+  },
+})

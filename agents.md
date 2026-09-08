@@ -102,9 +102,11 @@ or a written direction) and you implement them.
   layout, spacing, typography, color, states. Do not "improve" it.
 - If no mobile reference exists, make the page responsive sensibly while keeping the
   desktop reference intact.
-- The visual identity is a **dark-first fintech terminal**: near-black background,
-  hairline borders, restrained accent, monospaced tabular numerals for every price and
-  percentage. Semantic red/green is reserved for price movement only.
+- The visual identity is a **light-first fintech terminal** (per the v1.0 design
+  system in `design/design-system.png`): near-white neutral background, hairline
+  borders, one blue accent, monospaced tabular numerals for every price and
+  percentage. Semantic red/green is reserved for price movement only. Dark is a
+  secondary theme for later.
 - Reuse existing components and established StyleX patterns before creating new ones.
   Every feature must not introduce a new visual style.
 - Design tokens (colors, fonts, spacing scale, radii) live in one place
@@ -199,9 +201,11 @@ Do not re-decide these during implementation. Change them only if the user says 
 3. **Base currency:** USD only in v1. A currency switcher is a later decision, not a
    v1 feature.
 4. **Watchlist:** `localStorage`, keyed list of coin ids. No accounts, no sync.
-5. **Theme:** dark is the default and primary identity; light is secondary and must
-   not flash on load. Themes are StyleX themes (`createTheme`), not a class toggle on
-   `<body>` full of string overrides.
+5. **Theme:** light is the default and primary identity, per the v1.0 design system
+   (`design/design-system.png`, decided 2026-09-08 — supersedes the original
+   dark-first call). Dark is secondary/future and must not flash on load whenever it
+   ships. Themes are StyleX themes (`createTheme`), not a class toggle on `<body>`
+   full of string overrides.
 6. **Markets table shows 250 coins** (`per_page=250`) with client-side pagination or
    virtual scroll — whichever the approved plan chooses; do not silently pick both.
 7. **Sparklines come from `sparkline_in_7d`** on `/coins/markets` — never an extra

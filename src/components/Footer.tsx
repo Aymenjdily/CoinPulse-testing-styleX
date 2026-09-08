@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex'
-import { colors, space } from '../styles/tokens.stylex'
+import { colors, font, space, type } from '../styles/tokens.stylex'
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -21,8 +21,10 @@ const styles = stylex.create({
   },
   text: {
     margin: 0,
-    fontSize: 13,
-    color: colors.textMuted,
+    fontFamily: font.sans,
+    fontSize: type.captionSize,
+    color: colors.foreground,
+    opacity: 0.5,
     textAlign: 'center',
   },
 })

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import * as stylex from '@stylexjs/stylex'
-import { colors, font, space } from '../styles/tokens.stylex'
+import { colors, font, space, type } from '../styles/tokens.stylex'
 
 export default function Header() {
   return (
@@ -22,7 +22,7 @@ const styles = stylex.create({
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.border,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: colors.background,
   },
   nav: {
     display: 'flex',
@@ -35,9 +35,9 @@ const styles = stylex.create({
   brand: {
     fontFamily: font.mono,
     fontWeight: 700,
-    fontSize: 16,
+    fontSize: type.bodySize,
     letterSpacing: '0.02em',
-    color: colors.textPrimary,
+    color: colors.foreground,
     textDecoration: 'none',
   },
 })
