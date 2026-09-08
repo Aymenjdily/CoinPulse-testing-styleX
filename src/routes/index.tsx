@@ -12,6 +12,7 @@ import { POLL_INTERVAL_MS } from '../lib/data-policy'
 import { formatCompactUsd, formatCompactNumber, formatPercent } from '../lib/format'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { usePriceFlash } from '../hooks/usePriceFlash'
+import { useSinceLoadDelta } from '../hooks/useSinceLoadDelta'
 import { colors, font, radius, space, type } from '../styles/tokens.stylex'
 import StatCard from '../components/StatCard'
 import TrendingRail from '../components/TrendingRail'
@@ -143,6 +144,27 @@ function App() {
         }
       : undefined
 
+  // CoinGecko's /global has no real 24h delta for volume or dominance —
+  // these are genuine changes since this page loaded, not "today" figures.
+  // See tasks/03-global-stats-strip.md.
+  const volumeSinceLoad = useSinceLoadDelta(global?.totalVolumeUsd)
+  const volumeDelta =
+    volumeSinceLoad !== undefined && volumeSinceLoad !== 0
+      ? {
+          direction: (volumeSinceLoad >= 0 ? 'up' : 'down') as 'up' | 'down',
+          text: `${formatPercent(volumeSinceLoad)} since load`,
+        }
+      : undefined
+
+  const dominanceSinceLoad = useSinceLoadDelta(global?.btcDominance)
+  const dominanceDelta =
+    dominanceSinceLoad !== undefined && dominanceSinceLoad !== 0
+      ? {
+          direction: (dominanceSinceLoad >= 0 ? 'up' : 'down') as 'up' | 'down',
+          text: `${formatPercent(dominanceSinceLoad)} since load`,
+        }
+      : undefined
+
   return (
     <main {...stylex.props(styles.main)}>
       <section {...stylex.props(styles.statsSection)}>
@@ -157,8 +179,16 @@ function App() {
           value={global ? formatCompactUsd(global.totalMarketCapUsd) : '—'}
           delta={marketCapDelta}
         />
-        <StatCard label="24h volume" value={global ? formatCompactUsd(global.totalVolumeUsd) : '—'} />
-        <StatCard label="BTC dominance" value={global ? `${global.btcDominance.toFixed(1)}%` : '—'} />
+        <StatCard
+          label="24h volume"
+          value={global ? formatCompactUsd(global.totalVolumeUsd) : '—'}
+          delta={volumeDelta}
+        />
+        <StatCard
+          label="BTC dominance"
+          value={global ? `${global.btcDominance.toFixed(1)}%` : '—'}
+          delta={dominanceDelta}
+        />
         <StatCard
           label="Active coins"
           value={global ? formatCompactNumber(global.activeCryptocurrencies) : '—'}

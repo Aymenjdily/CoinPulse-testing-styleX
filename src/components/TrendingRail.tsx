@@ -20,7 +20,7 @@ export default function TrendingRail({ coins }: TrendingRailProps) {
       <div {...stylex.props(styles.row)}>
         {coins.map((coin) => (
           <div key={coin.id} {...stylex.props(styles.pill)}>
-            <img src={coin.thumb} alt="" width={16} height={16} {...stylex.props(styles.thumb)} />
+            <img src={coin.thumb} alt="" width={22} height={22} {...stylex.props(styles.thumb)} />
             <span {...stylex.props(styles.symbol)}>{coin.symbol.toUpperCase()}</span>
             {coin.priceChangePercentage24h !== null && (
               <span
@@ -67,13 +67,13 @@ const styles = stylex.create({
   pill: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: space.xs,
+    gap: space.sm,
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: colors.border,
     borderRadius: radius.pill,
-    paddingBlock: space.xs,
-    paddingInline: space.md,
+    paddingBlock: space.sm,
+    paddingInline: space.lg,
     backgroundColor: colors.background,
   },
   thumb: {
@@ -82,13 +82,13 @@ const styles = stylex.create({
   },
   symbol: {
     fontFamily: font.mono,
-    fontSize: type.smallSize,
+    fontSize: type.bodySize,
     fontWeight: 700,
     color: colors.foreground,
   },
   change: {
     fontFamily: font.mono,
-    fontSize: type.smallSize,
+    fontSize: type.bodySize,
     fontWeight: 600,
     fontVariantNumeric: 'tabular-nums',
   },
