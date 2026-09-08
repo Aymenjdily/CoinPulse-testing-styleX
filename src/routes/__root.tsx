@@ -2,14 +2,34 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import * as stylex from '@stylexjs/stylex'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
-import { lightTheme } from '../styles/themes.stylex'
+import { darkTheme, lightTheme } from '../styles/themes.stylex'
 import { colors, font } from '../styles/tokens.stylex'
+import {
+  THEME_STORAGE_KEY,
+  ThemeContext,
+  getThemeServerSnapshot,
+  getThemeSnapshot,
+  subscribeTheme,
+  writeThemeMode,
+} from '../theme/theme-context'
 
 import appCss from '../styles.css?url'
+
+const LIGHT_CLASS = stylex.props(lightTheme).className ?? ''
+const DARK_CLASS = stylex.props(darkTheme).className ?? ''
+
+// Runs before hydration so the correct theme paints immediately — this is
+// intentionally outside React (see `suppressHydrationWarning` below).
+// AGENTS.md section 7.5: dark must not flash on load.
+const THEME_INIT_SCRIPT = `(function(){try{var stored=localStorage.getItem(${JSON.stringify(
+  THEME_STORAGE_KEY,
+)});var mode=stored==='dark'?'dark':'light';var root=document.documentElement;root.className=mode==='dark'?${JSON.stringify(
+  DARK_CLASS,
+)}:${JSON.stringify(LIGHT_CLASS)};root.style.colorScheme=mode;}catch(e){}})();`
 
 export const Route = createRootRoute({
   head: () => ({
@@ -42,10 +62,22 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   // singleton shared across requests.
   const [queryClient] = useState(() => new QueryClient())
 
+  // THEME_INIT_SCRIPT has already painted the real stored theme directly on
+  // the DOM before hydration; useSyncExternalStore picks up that same
+  // localStorage value without a manual hydration-guard effect (the
+  // server/first-client snapshot is always 'light', matching what
+  // suppressHydrationWarning below allows the script to have overridden).
+  const mode = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot)
+
+  function toggle() {
+    writeThemeMode(mode === 'light' ? 'dark' : 'light')
+  }
+
   return (
-    <html lang="en" {...stylex.props(lightTheme)}>
+    <html lang="en" suppressHydrationWarning {...stylex.props(mode === 'dark' ? darkTheme : lightTheme)}>
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {import.meta.env.DEV && (
           <script
             type="module"
@@ -56,11 +88,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         )}
       </head>
       <body {...stylex.props(styles.body)}>
-        <QueryClientProvider client={queryClient}>
-          <Header />
-          {children}
-          <Footer />
-        </QueryClientProvider>
+        <ThemeContext.Provider value={{ mode, toggle }}>
+          <QueryClientProvider client={queryClient}>
+            <Header />
+            {children}
+            <Footer />
+          </QueryClientProvider>
+        </ThemeContext.Provider>
         <TanStackDevtools
           config={{ position: 'bottom-right' }}
           plugins={[

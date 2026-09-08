@@ -2,17 +2,19 @@ import { Link, useSearch } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import * as stylex from '@stylexjs/stylex'
-import { Star } from 'lucide-react'
+import { Moon, Star, Sun } from 'lucide-react'
 import { searchCoins } from '../lib/server/search'
 import type { SearchResult } from '../lib/types'
 import { SEARCH_DEBOUNCE_MS } from '../lib/data-policy'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
+import { useTheme } from '../theme/theme-context'
 import { colors, font, radius, space, type } from '../styles/tokens.stylex'
 import SearchInput from './SearchInput'
 import SearchResults from './SearchResults'
 import Badge from './Badge'
 
 export default function Header() {
+  const { mode, toggle } = useTheme()
   const search = useSearch({ strict: false }) as { view?: string }
   const activeView = search.view === 'watchlist' ? 'watchlist' : 'all'
 
@@ -109,6 +111,18 @@ export default function Header() {
 
         <div {...stylex.props(styles.rightGroup)}>
           <Badge variant="live">Live</Badge>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={mode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            {...stylex.props(styles.themeToggle)}
+          >
+            {mode === 'dark' ? (
+              <Sun size={16} strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <Moon size={16} strokeWidth={2} aria-hidden="true" />
+            )}
+          </button>
         </div>
       </nav>
     </header>
@@ -190,5 +204,22 @@ const styles = stylex.create({
     gap: space.sm,
     marginLeft: 'auto',
     flexShrink: 0,
+  },
+  themeToggle: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: colors.border,
+    backgroundColor: {
+      default: colors.background,
+      ':hover': colors.border,
+    },
+    color: colors.foreground,
+    cursor: 'pointer',
   },
 })

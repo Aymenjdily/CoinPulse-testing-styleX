@@ -31,7 +31,7 @@ commit and `prompts/001-project-init.md` for what it covered.
 | 06 | [Watchlist](06-watchlist.md) | Done |
 | 07 | [Search](07-search.md) | Done |
 | 08 | [Trending rail](08-trending-rail.md) | Done |
-| 09 | [Dark theme](09-dark-theme.md) | Blocked — needs a dark-mode design reference (agents.md section 3); light is now primary |
+| 09 | [Dark theme](09-dark-theme.md) | Done |
 | 10 | [Performance & accessibility polish](10-perf-a11y-polish.md) | Not started |
 | 11 | [Launch checks](11-launch-checks.md) | Not started |
 
