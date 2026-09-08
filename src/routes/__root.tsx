@@ -1,6 +1,8 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState } from 'react'
 import * as stylex from '@stylexjs/stylex'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
@@ -28,15 +30,22 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  // Created via useState so each client gets its own instance (the
+  // standard SSR-safe TanStack Query pattern) rather than a module-level
+  // singleton shared across requests.
+  const [queryClient] = useState(() => new QueryClient())
+
   return (
     <html lang="en" {...stylex.props(lightTheme)}>
       <head>
         <HeadContent />
       </head>
       <body {...stylex.props(styles.body)}>
-        <Header />
-        {children}
-        <Footer />
+        <QueryClientProvider client={queryClient}>
+          <Header />
+          {children}
+          <Footer />
+        </QueryClientProvider>
         <TanStackDevtools
           config={{ position: 'bottom-right' }}
           plugins={[

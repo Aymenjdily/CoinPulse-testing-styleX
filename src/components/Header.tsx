@@ -1,14 +1,111 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
 import * as stylex from '@stylexjs/stylex'
+import { searchCoins } from '../lib/server/search'
+import type { SearchResult } from '../lib/types'
+import { SEARCH_DEBOUNCE_MS } from '../lib/data-policy'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { colors, font, space, type } from '../styles/tokens.stylex'
+import SearchInput from './SearchInput'
+import SearchResults from './SearchResults'
+import Badge from './Badge'
 
 export default function Header() {
+  const search = useSearch({ strict: false }) as { view?: string }
+  const activeView = search.view === 'watchlist' ? 'watchlist' : 'all'
+
+  const [query, setQuery] = useState('')
+  const [highlightedIndex, setHighlightedIndex] = useState(0)
+  const [isOpen, setIsOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS)
+
+  const { data, isFetching } = useQuery({
+    queryKey: ['search', debouncedQuery],
+    queryFn: () => searchCoins({ data: { query: debouncedQuery } }),
+    enabled: debouncedQuery.trim().length > 0,
+  })
+  const results: SearchResult[] = data?.data ?? []
+
+  function closeDropdown() {
+    setIsOpen(false)
+    setHighlightedIndex(0)
+  }
+
+  function handleSelect(result: SearchResult) {
+    setQuery(result.name)
+    closeDropdown()
+    inputRef.current?.blur()
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (!isOpen || results.length === 0) return
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setHighlightedIndex((index) => (index + 1) % results.length)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setHighlightedIndex((index) => (index - 1 + results.length) % results.length)
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      handleSelect(results[highlightedIndex])
+    } else if (event.key === 'Escape') {
+      closeDropdown()
+      inputRef.current?.blur()
+    }
+  }
+
   return (
     <header {...stylex.props(styles.header)}>
       <nav {...stylex.props(styles.nav)}>
         <Link to="/" {...stylex.props(styles.brand)}>
           CoinPulse
         </Link>
+
+        <div {...stylex.props(styles.navLinks)}>
+          <Link
+            to="/"
+            search={{ view: undefined }}
+            {...stylex.props(styles.navLink, activeView === 'all' && styles.navLinkActive)}
+          >
+            Markets
+          </Link>
+          <Link
+            to="/"
+            search={{ view: 'watchlist' }}
+            {...stylex.props(styles.navLink, activeView === 'watchlist' && styles.navLinkActive)}
+          >
+            Watchlist
+          </Link>
+        </div>
+
+        <div {...stylex.props(styles.searchWrap)}>
+          <SearchInput
+            ref={inputRef}
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setIsOpen(true)
+              setHighlightedIndex(0)
+            }}
+            onFocus={() => setIsOpen(true)}
+            onBlur={() => setTimeout(closeDropdown, 150)}
+            onKeyDown={handleKeyDown}
+          />
+          {isOpen && (
+            <SearchResults
+              results={results}
+              query={debouncedQuery}
+              isLoading={isFetching}
+              highlightedIndex={highlightedIndex}
+              onSelect={handleSelect}
+            />
+          )}
+        </div>
+
+        <Badge variant="live">Live</Badge>
       </nav>
     </header>
   )
@@ -27,6 +124,7 @@ const styles = stylex.create({
   nav: {
     display: 'flex',
     alignItems: 'center',
+    gap: space.lg,
     maxWidth: 1280,
     marginInline: 'auto',
     paddingBlock: space.md,
@@ -39,5 +137,34 @@ const styles = stylex.create({
     letterSpacing: '0.02em',
     color: colors.foreground,
     textDecoration: 'none',
+    flexShrink: 0,
+  },
+  navLinks: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: space.lg,
+    flexShrink: 0,
+  },
+  navLink: {
+    fontFamily: font.sans,
+    fontSize: type.smallSize,
+    fontWeight: 600,
+    color: colors.foreground,
+    opacity: 0.5,
+    textDecoration: 'none',
+    paddingBlock: space.xs,
+    borderBottomWidth: 2,
+    borderBottomStyle: 'solid',
+    borderBottomColor: 'transparent',
+  },
+  navLinkActive: {
+    opacity: 1,
+    color: colors.primary,
+    borderBottomColor: colors.primary,
+  },
+  searchWrap: {
+    position: 'relative',
+    flexGrow: 1,
+    maxWidth: 360,
   },
 })

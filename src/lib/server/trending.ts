@@ -15,6 +15,11 @@ const rawTrendingSchema = z
           market_cap_rank: z.number().nullable(),
           thumb: z.string(),
           score: z.number(),
+          data: z
+            .object({
+              price_change_percentage_24h: z.object({ usd: z.number() }).partial().optional(),
+            })
+            .optional(),
         }),
       }),
     ),
@@ -27,6 +32,7 @@ const rawTrendingSchema = z
       marketCapRank: item.market_cap_rank,
       thumb: item.thumb,
       score: item.score,
+      priceChangePercentage24h: item.data?.price_change_percentage_24h?.usd ?? null,
     })),
   )
 

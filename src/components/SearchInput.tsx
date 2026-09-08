@@ -1,31 +1,33 @@
 import * as stylex from '@stylexjs/stylex'
+import { forwardRef } from 'react'
 import type { InputHTMLAttributes } from 'react'
+import { Search } from 'lucide-react'
 import { colors, font, neutral, radius, space, type } from '../styles/tokens.stylex'
 
 type SearchInputProps = InputHTMLAttributes<HTMLInputElement>
 
-function SearchIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M14 14L11 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-// Presentational only in this phase — debounce and result wiring land in
-// tasks/07-search.md.
-export default function SearchInput(props: SearchInputProps) {
+const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(function SearchInput(
+  props,
+  ref,
+) {
   return (
     <div {...stylex.props(styles.wrap)}>
       <span {...stylex.props(styles.icon)}>
-        <SearchIcon />
+        <Search size={16} strokeWidth={1.8} aria-hidden="true" />
       </span>
-      <input placeholder="Search coins..." {...stylex.props(styles.input)} {...props} />
+      <input
+        ref={ref}
+        placeholder="Search coins..."
+        autoComplete="off"
+        {...stylex.props(styles.input)}
+        {...props}
+      />
       <kbd {...stylex.props(styles.kbd)}>⌘K</kbd>
     </div>
   )
-}
+})
+
+export default SearchInput
 
 const styles = stylex.create({
   wrap: {

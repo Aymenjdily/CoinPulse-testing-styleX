@@ -6,14 +6,16 @@ type StatCardProps = {
   label: string
   value: string
   delta?: { direction: 'up' | 'down'; text: string }
+  note?: string
 }
 
-export default function StatCard({ label, value, delta }: StatCardProps) {
+export default function StatCard({ label, value, delta, note }: StatCardProps) {
   return (
     <div {...stylex.props(styles.card)}>
       <p {...stylex.props(styles.label)}>{label}</p>
       <p {...stylex.props(styles.value)}>{value}</p>
       {delta && <Badge variant={delta.direction}>{delta.text}</Badge>}
+      {note && <p {...stylex.props(styles.note)}>{note}</p>}
     </div>
   )
 }
@@ -47,5 +49,12 @@ const styles = stylex.create({
     fontWeight: type.titleWeight,
     color: colors.foreground,
     fontVariantNumeric: 'tabular-nums',
+  },
+  note: {
+    margin: 0,
+    fontFamily: font.sans,
+    fontSize: type.smallSize,
+    color: colors.foreground,
+    opacity: 0.5,
   },
 })

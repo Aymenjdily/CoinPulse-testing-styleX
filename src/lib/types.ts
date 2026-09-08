@@ -60,6 +60,7 @@ export const trendingCoinSchema = z.object({
   marketCapRank: z.number().nullable(),
   thumb: z.string(),
   score: z.number(),
+  priceChangePercentage24h: z.number().nullable(),
 })
 export type TrendingCoin = z.infer<typeof trendingCoinSchema>
 

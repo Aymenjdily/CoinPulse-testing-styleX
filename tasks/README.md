@@ -25,12 +25,12 @@ commit and `prompts/001-project-init.md` for what it covered.
 |---|-------|--------|
 | 01 | [Design system implementation](01-design-system.md) | Done |
 | 02 | [Data layer & CoinGecko server functions](02-data-layer.md) | Done |
-| 03 | [Global stats strip](03-global-stats-strip.md) | Not started |
-| 04 | [Markets table](04-markets-table.md) | Not started |
+| 03 | [Global stats strip](03-global-stats-strip.md) | Done |
+| 04 | [Markets table](04-markets-table.md) | Done |
 | 05 | [Coin detail page](05-coin-detail.md) | Not started |
-| 06 | [Watchlist](06-watchlist.md) | Not started |
-| 07 | [Search](07-search.md) | Not started |
-| 08 | [Trending rail](08-trending-rail.md) | Not started |
+| 06 | [Watchlist](06-watchlist.md) | Done |
+| 07 | [Search](07-search.md) | Done |
+| 08 | [Trending rail](08-trending-rail.md) | Done |
 | 09 | [Dark theme](09-dark-theme.md) | Blocked — needs a dark-mode design reference (agents.md section 3); light is now primary |
 | 10 | [Performance & accessibility polish](10-perf-a11y-polish.md) | Not started |
 | 11 | [Launch checks](11-launch-checks.md) | Not started |

@@ -1,5 +1,6 @@
 import * as stylex from '@stylexjs/stylex'
 import type { ReactNode } from 'react'
+import { ArrowUp, ArrowDown } from 'lucide-react'
 import { colors, font, neutral, radius, space, type } from '../styles/tokens.stylex'
 
 type BadgeProps = {
@@ -7,27 +8,11 @@ type BadgeProps = {
   children: ReactNode
 }
 
-function ArrowUp() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-      <path d="M5 8V2M5 2L2 5M5 2L8 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function ArrowDown() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-      <path d="M5 2V8M5 8L2 5M5 8L8 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 export default function Badge({ variant, children }: BadgeProps) {
   return (
     <span {...stylex.props(styles.base, styles[variant])}>
-      {variant === 'up' && <ArrowUp />}
-      {variant === 'down' && <ArrowDown />}
+      {variant === 'up' && <ArrowUp size={10} strokeWidth={2.5} aria-hidden="true" />}
+      {variant === 'down' && <ArrowDown size={10} strokeWidth={2.5} aria-hidden="true" />}
       {variant === 'live' && <span {...stylex.props(styles.liveDot)} />}
       {children}
     </span>

@@ -1,117 +1,227 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
+import { z } from 'zod'
 import * as stylex from '@stylexjs/stylex'
+import { Star } from 'lucide-react'
+import { getMarkets } from '../lib/server/markets'
+import { getGlobal } from '../lib/server/global'
+import { getTrending } from '../lib/server/trending'
+import type { CoinMarket } from '../lib/types'
+import { POLL_INTERVAL_MS } from '../lib/data-policy'
+import { formatCompactUsd, formatCompactNumber, formatPercent } from '../lib/format'
+import { useWatchlist } from '../hooks/useWatchlist'
+import { usePriceFlash } from '../hooks/usePriceFlash'
 import { colors, font, radius, space, type } from '../styles/tokens.stylex'
-import Button from '../components/Button'
-import Badge from '../components/Badge'
-import RangeTabs from '../components/RangeTabs'
-import SearchInput from '../components/SearchInput'
 import StatCard from '../components/StatCard'
-import { MarketsTableHeader, MarketsTableRow, type MarketsTableRow as Row } from '../components/MarketsTableShell'
+import TrendingRail from '../components/TrendingRail'
+import ViewToggle from '../components/ViewToggle'
+import Pagination from '../components/Pagination'
+import {
+  MarketsTableHeader,
+  MarketsTableRow,
+  MarketsTableSkeletonRow,
+  type SortDir,
+  type SortKey,
+} from '../components/MarketsTableShell'
 
-export const Route = createFileRoute('/')({ component: App })
+const PAGE_SIZE = 10
 
-const RANGES = ['24H', '7D', '30D', '1Y'] as const
+const searchSchema = z.object({
+  view: z.enum(['all', 'watchlist']).optional(),
+  sort: z
+    .enum(['rank', 'price', 'change1h', 'change24h', 'change7d', 'volume', 'marketCap'])
+    .optional(),
+  dir: z.enum(['asc', 'desc']).optional(),
+  page: z.number().int().min(1).optional(),
+})
 
-const demoRows: Row[] = [
-  {
-    rank: 1,
-    name: 'Bitcoin',
-    symbol: 'BTC',
-    iconColor: '#F7931A',
-    price: '$67,432.10',
-    change1h: { direction: 'up', text: '+0.32%' },
-    change24h: { direction: 'up', text: '+2.34%' },
-    change7d: { direction: 'up', text: '+5.18%' },
-    sparkline: [10, 12, 11, 13, 15, 14, 17],
-    marketCap: '$1.31T',
-  },
-  {
-    rank: 2,
-    name: 'Ethereum',
-    symbol: 'ETH',
-    iconColor: '#627EEA',
-    price: '$3,512.44',
-    change1h: { direction: 'up', text: '+0.18%' },
-    change24h: { direction: 'up', text: '+1.02%' },
-    change7d: { direction: 'up', text: '+2.44%' },
-    sparkline: [12, 11, 13, 12, 14, 13, 15],
-    marketCap: '$422.8B',
-  },
-  {
-    rank: 3,
-    name: 'Solana',
-    symbol: 'SOL',
-    iconColor: '#9945FF',
-    price: '$142.07',
-    change1h: { direction: 'down', text: '-0.44%' },
-    change24h: { direction: 'down', text: '-1.12%' },
-    change7d: { direction: 'down', text: '-3.36%' },
-    sparkline: [17, 16, 15, 14, 13, 12, 11],
-    marketCap: '$76.5B',
-  },
-]
+export const Route = createFileRoute('/')({
+  validateSearch: searchSchema,
+  component: App,
+})
+
+function sortValue(coin: CoinMarket, key: SortKey): number {
+  switch (key) {
+    case 'rank':
+      return coin.marketCapRank ?? Number.MAX_SAFE_INTEGER
+    case 'price':
+      return coin.currentPrice
+    case 'change1h':
+      return coin.priceChangePercentage1h ?? -Infinity
+    case 'change24h':
+      return coin.priceChangePercentage24h ?? -Infinity
+    case 'change7d':
+      return coin.priceChangePercentage7d ?? -Infinity
+    case 'volume':
+      return coin.totalVolume
+    case 'marketCap':
+      return coin.marketCap
+  }
+}
+
+const timeFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'UTC',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
 
 function App() {
-  const [range, setRange] = useState<(typeof RANGES)[number]>('7D')
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+
+  const view = search.view ?? 'all'
+  const sort: SortKey = search.sort ?? 'marketCap'
+  const dir: SortDir = search.dir ?? 'desc'
+  const page = search.page ?? 1
+
+  const { watchedIds, isWatched, toggle } = useWatchlist()
+
+  const marketsQuery = useQuery({
+    queryKey: ['markets'],
+    queryFn: () => getMarkets(),
+    refetchInterval: POLL_INTERVAL_MS.markets,
+    refetchIntervalInBackground: false,
+  })
+  const globalQuery = useQuery({
+    queryKey: ['global'],
+    queryFn: () => getGlobal(),
+    refetchInterval: POLL_INTERVAL_MS.global,
+    refetchIntervalInBackground: false,
+  })
+  const trendingQuery = useQuery({
+    queryKey: ['trending'],
+    queryFn: () => getTrending(),
+    refetchInterval: POLL_INTERVAL_MS.trending,
+    refetchIntervalInBackground: false,
+  })
+
+  const flashes = usePriceFlash(marketsQuery.data?.data)
+
+  const filteredMarkets = useMemo(() => {
+    const all = marketsQuery.data?.data ?? []
+    if (view === 'watchlist') return all.filter((coin) => watchedIds.has(coin.id))
+    return all
+  }, [marketsQuery.data, view, watchedIds])
+
+  const sortedMarkets = useMemo(() => {
+    const copy = [...filteredMarkets]
+    copy.sort((a, b) => {
+      const diff = sortValue(a, sort) - sortValue(b, sort)
+      return dir === 'asc' ? diff : -diff
+    })
+    return copy
+  }, [filteredMarkets, sort, dir])
+
+  const totalPages = Math.max(1, Math.ceil(sortedMarkets.length / PAGE_SIZE))
+  const clampedPage = Math.min(page, totalPages)
+  const pageRows = sortedMarkets.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE)
+
+  function updateSearch(next: Partial<z.infer<typeof searchSchema>>) {
+    navigate({ search: (prev) => ({ ...prev, ...next }) })
+  }
+
+  function handleSort(key: SortKey) {
+    if (key === sort) {
+      updateSearch({ dir: dir === 'asc' ? 'desc' : 'asc', page: 1 })
+    } else {
+      updateSearch({ sort: key, dir: 'desc', page: 1 })
+    }
+  }
+
+  function handleViewChange(nextView: 'all' | 'watchlist') {
+    updateSearch({ view: nextView === 'all' ? undefined : nextView, page: 1 })
+  }
+
+  const global = globalQuery.data?.data
+  const marketCapDelta =
+    global && global.marketCapChangePercentage24h !== 0
+      ? {
+          direction: (global.marketCapChangePercentage24h >= 0 ? 'up' : 'down') as 'up' | 'down',
+          text: `${formatPercent(global.marketCapChangePercentage24h)} today`,
+        }
+      : undefined
 
   return (
     <main {...stylex.props(styles.main)}>
-      <h1 {...stylex.props(styles.title)}>Markets dashboard coming soon</h1>
-      <p {...stylex.props(styles.subtitle)}>
-        Design system primitives are wired up. The live markets table, coin detail
-        pages, and watchlist land in following approved prompts.
-      </p>
-
-      <section {...stylex.props(styles.section)}>
-        <h2 {...stylex.props(styles.sectionTitle)}>Buttons</h2>
-        <div {...stylex.props(styles.row)}>
-          <Button variant="primary">Add to Watchlist</Button>
-          <Button variant="secondary">Export CSV</Button>
-          <Button variant="ghost">View all</Button>
-          <Button variant="destructive">Delete</Button>
-          <Button variant="secondary" disabled>
-            Disabled
-          </Button>
+      <section {...stylex.props(styles.statsSection)}>
+        {globalQuery.data?.stale && (
+          <p {...stylex.props(styles.staleNotice)}>
+            Showing stale data · last updated {timeFormatter.format(globalQuery.data.lastUpdated)} UTC
+          </p>
+        )}
+        <div {...stylex.props(styles.statsGrid)}>
+        <StatCard
+          label="Total market cap"
+          value={global ? formatCompactUsd(global.totalMarketCapUsd) : '—'}
+          delta={marketCapDelta}
+        />
+        <StatCard label="24h volume" value={global ? formatCompactUsd(global.totalVolumeUsd) : '—'} />
+        <StatCard label="BTC dominance" value={global ? `${global.btcDominance.toFixed(1)}%` : '—'} />
+        <StatCard
+          label="Active coins"
+          value={global ? formatCompactNumber(global.activeCryptocurrencies) : '—'}
+          note="tracked live"
+        />
         </div>
       </section>
 
-      <section {...stylex.props(styles.section)}>
-        <h2 {...stylex.props(styles.sectionTitle)}>Badges</h2>
-        <div {...stylex.props(styles.row)}>
-          <Badge variant="up">+2.34%</Badge>
-          <Badge variant="down">-1.12%</Badge>
-          <Badge variant="neutral">BTC</Badge>
-          <Badge variant="rank">#1</Badge>
-          <Badge variant="live">Live</Badge>
-        </div>
-      </section>
+      {trendingQuery.data && <TrendingRail coins={trendingQuery.data.data} />}
 
-      <section {...stylex.props(styles.section)}>
-        <h2 {...stylex.props(styles.sectionTitle)}>Range tabs & search</h2>
-        <div {...stylex.props(styles.row)}>
-          <RangeTabs options={RANGES} value={range} onChange={setRange} aria-label="Chart range" />
-          <SearchInput />
+      <section {...stylex.props(styles.marketsSection)}>
+        <div {...stylex.props(styles.marketsHeader)}>
+          <h1 {...stylex.props(styles.title)}>Markets</h1>
+          <ViewToggle view={view} watchlistCount={watchedIds.size} onChange={handleViewChange} />
+          {marketsQuery.data && (
+            <p {...stylex.props(styles.liveStatus)}>
+              {marketsQuery.data.stale ? 'stale · last updated' : 'live · updated'}{' '}
+              {timeFormatter.format(marketsQuery.data.lastUpdated)} UTC
+            </p>
+          )}
         </div>
-      </section>
 
-      <section {...stylex.props(styles.section)}>
-        <h2 {...stylex.props(styles.sectionTitle)}>Stat cards</h2>
-        <div {...stylex.props(styles.statGrid)}>
-          <StatCard label="Total market cap" value="$2.31T" delta={{ direction: 'up', text: '+1.8% today' }} />
-          <StatCard label="BTC dominance" value="54.2%" delta={{ direction: 'down', text: '-0.3% today' }} />
-          <StatCard label="24h volume" value="$82.4B" delta={{ direction: 'up', text: '+4.6% today' }} />
-        </div>
-      </section>
-
-      <section {...stylex.props(styles.section)}>
-        <h2 {...stylex.props(styles.sectionTitle)}>Markets table</h2>
         <div {...stylex.props(styles.tableShell)}>
-          <MarketsTableHeader />
-          {demoRows.map((row) => (
-            <MarketsTableRow key={row.symbol} row={row} />
-          ))}
+          <MarketsTableHeader sort={sort} dir={dir} onSort={handleSort} />
+
+          {marketsQuery.isLoading &&
+            Array.from({ length: PAGE_SIZE }, (_, i) => <MarketsTableSkeletonRow key={i} />)}
+
+          {!marketsQuery.isLoading && view === 'watchlist' && pageRows.length === 0 && (
+            <div {...stylex.props(styles.emptyState)}>
+              <Star size={28} strokeWidth={1.5} aria-hidden="true" />
+              <p {...stylex.props(styles.emptyTitle)}>Star a coin to pin it here</p>
+              <p {...stylex.props(styles.emptyBody)}>
+                Your watchlist is saved in this browser only.
+              </p>
+            </div>
+          )}
+
+          {!marketsQuery.isLoading &&
+            pageRows.map((coin) => (
+              <MarketsTableRow
+                key={coin.id}
+                coin={coin}
+                isWatched={isWatched(coin.id)}
+                onToggleWatch={toggle}
+                flash={flashes.get(coin.id)}
+              />
+            ))}
         </div>
+
+        {!marketsQuery.isLoading && sortedMarkets.length > 0 && (
+          <div {...stylex.props(styles.paginationRow)}>
+            <p {...stylex.props(styles.paginationLabel)}>
+              Showing {(clampedPage - 1) * PAGE_SIZE + 1}–
+              {Math.min(clampedPage * PAGE_SIZE, sortedMarkets.length)} of {sortedMarkets.length} coins
+            </p>
+            <Pagination
+              page={clampedPage}
+              totalPages={totalPages}
+              onPageChange={(nextPage) => updateSearch({ page: nextPage })}
+            />
+          </div>
+        )}
       </section>
     </main>
   )
@@ -122,45 +232,51 @@ const styles = stylex.create({
     maxWidth: 1280,
     marginInline: 'auto',
     paddingInline: space.lg,
-    paddingBlock: space.xxl,
+    paddingBlock: space.xl,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: space.xxl,
+  },
+  statsSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: space.sm,
+  },
+  staleNotice: {
+    margin: 0,
+    fontFamily: font.mono,
+    fontSize: type.captionSize,
+    color: colors.warn,
+  },
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: space.lg,
+  },
+  marketsSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: space.lg,
+  },
+  marketsHeader: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: space.lg,
   },
   title: {
+    margin: 0,
+    marginRight: 'auto',
     fontFamily: font.sans,
     fontSize: type.titleSize,
     fontWeight: type.titleWeight,
     color: colors.foreground,
+  },
+  liveStatus: {
     margin: 0,
-    marginBottom: space.md,
-  },
-  subtitle: {
-    fontSize: type.bodySize,
-    lineHeight: 1.6,
-    color: colors.foreground,
-    opacity: 0.6,
-    maxWidth: 560,
-    margin: 0,
-  },
-  section: {
-    marginTop: space.xxl,
-  },
-  sectionTitle: {
-    fontFamily: font.sans,
-    fontSize: type.cardTitleSize,
-    fontWeight: type.cardTitleWeight,
-    color: colors.foreground,
-    margin: 0,
-    marginBottom: space.lg,
-  },
-  row: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: space.md,
-  },
-  statGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: space.lg,
+    fontFamily: font.mono,
+    fontSize: type.captionSize,
+    color: colors.up,
   },
   tableShell: {
     borderWidth: 1,
@@ -168,5 +284,39 @@ const styles = stylex.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     overflow: 'hidden',
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: space.xs,
+    paddingBlock: space.xxl,
+    color: colors.foreground,
+    opacity: 0.5,
+  },
+  emptyTitle: {
+    margin: 0,
+    fontFamily: font.sans,
+    fontSize: type.bodySize,
+    fontWeight: 600,
+  },
+  emptyBody: {
+    margin: 0,
+    fontFamily: font.sans,
+    fontSize: type.smallSize,
+  },
+  paginationRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.md,
+  },
+  paginationLabel: {
+    margin: 0,
+    fontFamily: font.sans,
+    fontSize: type.smallSize,
+    color: colors.foreground,
+    opacity: 0.5,
   },
 })
