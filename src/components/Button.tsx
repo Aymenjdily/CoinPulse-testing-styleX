@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import { blue, colors, duration, font, neutral, radius, space, type } from '../styles/tokens.stylex'
+import { colors, duration, font, radius, space, type } from '../styles/tokens.stylex'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive'
 
@@ -56,14 +56,14 @@ const styles = stylex.create({
   primary: {
     backgroundColor: {
       default: colors.primary,
-      ':hover': blue.b700,
+      ':hover': colors.primaryHover,
     },
     color: '#FFFFFF',
   },
   secondary: {
     backgroundColor: {
       default: colors.background,
-      ':hover': neutral.n50,
+      ':hover': colors.surfaceHover,
     },
     color: colors.foreground,
     borderColor: colors.border,
@@ -71,7 +71,7 @@ const styles = stylex.create({
   ghost: {
     backgroundColor: {
       default: 'transparent',
-      ':hover': neutral.n100,
+      ':hover': colors.surfaceSubtle,
     },
     color: colors.foreground,
   },
@@ -84,9 +84,10 @@ const styles = stylex.create({
     },
   },
   disabled: {
-    backgroundColor: neutral.n100,
-    color: neutral.n400,
-    borderColor: neutral.n200,
+    backgroundColor: colors.surfaceSubtle,
+    color: colors.foreground,
+    opacity: 0.4,
+    borderColor: colors.border,
     cursor: 'not-allowed',
   },
 })

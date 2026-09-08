@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex'
 import type { ReactNode } from 'react'
 import { ArrowUp, ArrowDown } from 'lucide-react'
-import { colors, font, neutral, radius, space, type } from '../styles/tokens.stylex'
+import { colors, font, radius, space, type } from '../styles/tokens.stylex'
 
 type BadgeProps = {
   variant: 'up' | 'down' | 'neutral' | 'rank' | 'live'
@@ -46,14 +46,14 @@ const styles = stylex.create({
   },
   neutral: {
     color: colors.foreground,
-    backgroundColor: neutral.n100,
-    borderColor: neutral.n200,
+    backgroundColor: colors.surfaceSubtle,
+    borderColor: colors.border,
     fontFamily: font.sans,
   },
   rank: {
     color: colors.foreground,
-    backgroundColor: neutral.n100,
-    borderColor: neutral.n200,
+    backgroundColor: colors.surfaceSubtle,
+    borderColor: colors.border,
     fontFamily: font.mono,
   },
   live: {

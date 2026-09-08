@@ -35,7 +35,16 @@ export const colors = stylex.defineVars({
   background: '#FFFFFF',
   foreground: '#0A0A0A',
   primary: '#2563EB',
+  primaryHover: '#1D4ED8',
+  primarySoft: '#EFF6FF',
   border: '#E5E5E5',
+  // Theme-aware neutral fills — for backgrounds/hover states that must
+  // invert with the theme. The static `neutral` scale above does NOT do
+  // this (it's the same hex in both themes), so anything using a neutral
+  // shade as a background fill (not just a border/text accent) belongs
+  // here instead.
+  surfaceSubtle: '#F5F5F5',
+  surfaceHover: '#FAFAFA',
 
   // Price movement — reserved for that purpose only
   up: '#16A34A',

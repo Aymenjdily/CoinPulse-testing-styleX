@@ -3,6 +3,10 @@ import { forwardRef } from 'react'
 import type { InputHTMLAttributes } from 'react'
 import { Search } from 'lucide-react'
 import { colors, font, neutral, radius, space, type } from '../styles/tokens.stylex'
+// `neutral` here is only used for text/icon color (n400/n500), which reads
+// fine unchanged in both themes — see the comment on `colors.surfaceSubtle`
+// in tokens.stylex.ts for why a *background fill* needs a themed token but
+// a muted foreground color doesn't.
 
 type SearchInputProps = InputHTMLAttributes<HTMLInputElement>
 
@@ -65,7 +69,7 @@ const styles = stylex.create({
     fontFamily: font.mono,
     fontSize: type.captionSize,
     color: neutral.n500,
-    backgroundColor: neutral.n100,
+    backgroundColor: colors.surfaceSubtle,
     borderRadius: radius.sm,
     paddingBlock: '2px',
     paddingInline: space.xs,

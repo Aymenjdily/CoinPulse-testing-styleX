@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex'
 import type { SearchResult } from '../lib/types'
-import { blue, colors, elevation, font, radius, space, type } from '../styles/tokens.stylex'
+import { colors, elevation, font, radius, space, type } from '../styles/tokens.stylex'
 
 type SearchResultsProps = {
   results: SearchResult[]
@@ -84,7 +84,7 @@ const styles = stylex.create({
     textAlign: 'left',
   },
   optionActive: {
-    backgroundColor: blue.b50,
+    backgroundColor: colors.primarySoft,
   },
   thumb: {
     borderRadius: radius.pill,

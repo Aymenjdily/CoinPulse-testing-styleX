@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex'
-import { colors, duration, elevation, font, neutral, radius, space, type } from '../styles/tokens.stylex'
+import { colors, duration, elevation, font, radius, space, type } from '../styles/tokens.stylex'
 
 type RangeTabsProps<T extends string> = {
   options: readonly T[]
@@ -39,7 +39,7 @@ const styles = stylex.create({
   track: {
     display: 'inline-flex',
     gap: space.xs,
-    backgroundColor: neutral.n100,
+    backgroundColor: colors.surfaceSubtle,
     borderRadius: radius.md,
     padding: space.xs,
   },

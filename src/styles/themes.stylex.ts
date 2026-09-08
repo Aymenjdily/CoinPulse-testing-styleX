@@ -7,7 +7,11 @@ export const lightTheme = stylex.createTheme(colors, {
   background: '#FFFFFF',
   foreground: '#0A0A0A',
   primary: '#2563EB',
+  primaryHover: '#1D4ED8',
+  primarySoft: '#EFF6FF',
   border: '#E5E5E5',
+  surfaceSubtle: '#F5F5F5',
+  surfaceHover: '#FAFAFA',
 
   up: '#16A34A',
   upSoft: '#F0FDF4',
@@ -37,7 +41,11 @@ export const darkTheme = stylex.createTheme(colors, {
   background: '#0A0A0A',
   foreground: '#FAFAFA',
   primary: '#3B82F6',
+  primaryHover: '#60A5FA',
+  primarySoft: 'rgba(59, 130, 246, 0.16)',
   border: '#262626',
+  surfaceSubtle: '#262626',
+  surfaceHover: '#171717',
 
   up: '#16A34A',
   upSoft: 'rgba(22, 163, 74, 0.16)',

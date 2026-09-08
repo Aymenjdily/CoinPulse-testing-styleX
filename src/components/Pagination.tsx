@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex'
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
-import { colors, font, neutral, radius, space, type } from '../styles/tokens.stylex'
+import { colors, font, radius, space, type } from '../styles/tokens.stylex'
 
 type PaginationProps = {
   page: number
@@ -90,7 +90,7 @@ const styles = stylex.create({
     borderColor: colors.border,
     backgroundColor: {
       default: colors.background,
-      ':hover': neutral.n50,
+      ':hover': colors.surfaceHover,
     },
     color: colors.foreground,
     cursor: 'pointer',
