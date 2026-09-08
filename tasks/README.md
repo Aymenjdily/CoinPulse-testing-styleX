@@ -33,7 +33,7 @@ commit and `prompts/001-project-init.md` for what it covered.
 | 08 | [Trending rail](08-trending-rail.md) | Done |
 | 09 | [Dark theme](09-dark-theme.md) | Done |
 | 10 | [Performance & accessibility polish](10-perf-a11y-polish.md) | Done (code-level; Lighthouse/keyboard/visual pass still needed) |
-| 11 | [Launch checks](11-launch-checks.md) | Not started |
+| 11 | [Launch checks](11-launch-checks.md) | Done — ⚠️ real quota risk flagged, needs your decision |
 
 Update the table and the phase's own file together whenever status changes —
 don't let them drift.
