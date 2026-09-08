@@ -4,10 +4,10 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
+  useCartesianScale,
   XAxis,
   YAxis,
 } from 'recharts'
@@ -70,10 +70,18 @@ function ChartTooltip({ active, payload, days, startPrice }: ChartTooltipProps) 
   )
 }
 
-function EndBubble({ cx, cy, price }: { cx?: number; cy?: number; price: number }) {
+// A recognized Recharts component (ReferenceDot, etc.) still paints inside
+// Recharts' own fixed internal layer order regardless of where it sits in
+// JSX — that's what left the bubble rendering *behind* the Area's fill.
+// Recharts 3 renders genuinely custom, non-Recharts components in true JSX
+// order instead, so this reads its own pixel position via useCartesianScale
+// and is placed as the AreaChart's last child to guarantee it paints on top
+// of everything else.
+function EndPriceBubble({ timestamp, price }: { timestamp: number; price: number }) {
   const textRef = useRef<SVGTextElement>(null)
   const [textWidth, setTextWidth] = useState<number | null>(null)
   const text = formatPrice(price)
+  const point = useCartesianScale({ x: timestamp, y: price })
 
   // getBBox() measures the glyphs actually rendered by the browser — the
   // only reliable way to size the pill, since a guessed character width
@@ -85,7 +93,8 @@ function EndBubble({ cx, cy, price }: { cx?: number; cy?: number; price: number 
     }
   }, [text])
 
-  if (cx === undefined || cy === undefined) return null
+  if (!point) return null
+  const { x: cx, y: cy } = point
 
   const width = textWidth !== null ? textWidth + BUBBLE_PADDING_PX : text.length * 9 + BUBBLE_PADDING_PX
   const centerX = cx - 6 + width / 2
@@ -175,14 +184,7 @@ export default function PriceChart({ points, days, isFetching = false }: PriceCh
               dot={false}
               activeDot={{ r: 5, fill: colors.primary, stroke: colors.background, strokeWidth: 2 }}
             />
-            <ReferenceDot
-              x={lastPoint.timestamp}
-              y={lastPoint.price}
-              r={0}
-              shape={(props: { cx?: number; cy?: number }) => (
-                <EndBubble cx={props.cx} cy={props.cy} price={lastPoint.price} />
-              )}
-            />
+            <EndPriceBubble timestamp={lastPoint.timestamp} price={lastPoint.price} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
